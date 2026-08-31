@@ -217,6 +217,7 @@ document.querySelectorAll('.auth-tab').forEach(t=>t.addEventListener('click',()=
 
 async function showApp(){
   console.log('🎮 showApp called, USERNAME=',USERNAME);
+  mainMenu?.classList.add('hidden');
   authScreen?.classList.add('hidden'); creationScreen?.classList.add('hidden');
   appHeader?.classList.remove('hidden'); navLoggedIn?.classList.remove('hidden');
   navUsername.textContent = USERNAME; loadOdds();
