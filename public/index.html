@@ -116,23 +116,81 @@
 
   <!-- ===== CHARACTER CREATION ===== -->
   <section class="creation-screen hidden" id="creation-screen">
-    <div class="auth-card creation-card">
+    <div class="auth-card creation-card" style="max-width:520px;">
       <div class="glyph">⚔️</div>
       <h2>Buat Karaktermu</h2>
-      <p class="desc">Pilih karaktermu dan beri nama. Hanya bisa diubah saat reset.</p>
-      <div class="gender-select">
-        <button class="gender-btn active" data-gender="male" id="gender-male">
-          <canvas id="preview-male" width="16" height="16"></canvas>
-          <span class="gender-label">Laki-laki</span>
-        </button>
-        <button class="gender-btn" data-gender="female" id="gender-female">
-          <canvas id="preview-female" width="16" height="16"></canvas>
-          <span class="gender-label">Perempuan</span>
-        </button>
+      <p class="desc">Kustomisasi penampilan karaktermu. Hanya bisa diubah saat reset.</p>
+      <div class="creation-preview">
+        <canvas id="creation-canvas" width="16" height="16"></canvas>
       </div>
       <div class="creation-name">
-        <label for="creation-name-input" class="sr-only">Nama Karakter</label>
+        <label for="creation-name-input">Nama Karakter</label>
         <input id="creation-name-input" type="text" maxlength="24" placeholder="Nama karaktermu (opsional)">
+      </div>
+      <div class="creation-options" id="creation-options">
+        <div class="creation-group">
+          <label>Jenis Kelamin</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn active" data-field="gender" data-value="male">👨 Cowok</button>
+            <button class="creation-opt-btn" data-field="gender" data-value="female">👩 Cewek</button>
+          </div>
+        </div>
+        <div class="creation-group">
+          <label>Gaya Rambut</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn active" data-field="hair" data-value="short">Pendek</button>
+            <button class="creation-opt-btn" data-field="hair" data-value="spiky">Spiky</button>
+            <button class="creation-opt-btn" data-field="hair" data-value="long">Panjang</button>
+          </div>
+        </div>
+        <div class="creation-group">
+          <label>Warna Rambut</label>
+          <div class="creation-opt-row" id="hair-color-row">
+            <button class="creation-opt-btn color-btn active" data-field="hairColor" data-value="#5a3825" style="--btn-c:#5a3825"></button>
+            <button class="creation-opt-btn color-btn" data-field="hairColor" data-value="#1a1a1a" style="--btn-c:#1a1a1a"></button>
+            <button class="creation-opt-btn color-btn" data-field="hairColor" data-value="#c05080" style="--btn-c:#c05080"></button>
+            <button class="creation-opt-btn color-btn" data-field="hairColor" data-value="#e8a030" style="--btn-c:#e8a030"></button>
+            <button class="creation-opt-btn color-btn" data-field="hairColor" data-value="#d42a2a" style="--btn-c:#d42a2a"></button>
+            <button class="creation-opt-btn color-btn" data-field="hairColor" data-value="#3a7abf" style="--btn-c:#3a7abf"></button>
+            <button class="creation-opt-btn color-btn" data-field="hairColor" data-value="#e8e8e8" style="--btn-c:#e8e8e8"></button>
+          </div>
+        </div>
+        <div class="creation-group">
+          <label>Warna Kulit</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn color-btn active" data-field="skin" data-value="#f5c49c" style="--btn-c:#f5c49c"></button>
+            <button class="creation-opt-btn color-btn" data-field="skin" data-value="#e8b088" style="--btn-c:#e8b088"></button>
+            <button class="creation-opt-btn color-btn" data-field="skin" data-value="#c68c5c" style="--btn-c:#c68c5c"></button>
+            <button class="creation-opt-btn color-btn" data-field="skin" data-value="#8d5c3a" style="--btn-c:#8d5c3a"></button>
+            <button class="creation-opt-btn color-btn" data-field="skin" data-value="#5a3820" style="--btn-c:#5a3820"></button>
+          </div>
+        </div>
+        <div class="creation-group">
+          <label>Gaya Baju</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn active" data-field="outfit" data-value="tshirt">Kaos</button>
+            <button class="creation-opt-btn" data-field="outfit" data-value="armor">Zirah</button>
+            <button class="creation-opt-btn" data-field="outfit" data-value="robe">Jubah</button>
+          </div>
+        </div>
+        <div class="creation-group">
+          <label>Warna Baju</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn color-btn active" data-field="outfitColor" data-value="#2d7a3a" style="--btn-c:#2d7a3a"></button>
+            <button class="creation-opt-btn color-btn" data-field="outfitColor" data-value="#8b2252" style="--btn-c:#8b2252"></button>
+            <button class="creation-opt-btn color-btn" data-field="outfitColor" data-value="#2a4a8a" style="--btn-c:#2a4a8a"></button>
+            <button class="creation-opt-btn color-btn" data-field="outfitColor" data-value="#6b3a8a" style="--btn-c:#6b3a8a"></button>
+            <button class="creation-opt-btn color-btn" data-field="outfitColor" data-value="#b8860b" style="--btn-c:#b8860b"></button>
+          </div>
+        </div>
+        <div class="creation-group">
+          <label>Sepatu</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn active" data-field="shoes" data-value="boots">Boots</button>
+            <button class="creation-opt-btn" data-field="shoes" data-value="sandals">Sandal</button>
+            <button class="creation-opt-btn" data-field="shoes" data-value="heavy">Heavy</button>
+          </div>
+        </div>
       </div>
       <p class="auth-error" id="creation-error"></p>
       <button class="auth-submit" id="btn-create-character">Masuki Gerbang</button>
@@ -465,6 +523,6 @@
   </div>
 </div>
 
-<script src="/app.js?v=8.2"></script>
+<script src="/app.js?v=9.0"></script>
 </body>
 </html>

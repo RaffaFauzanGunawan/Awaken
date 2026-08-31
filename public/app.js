@@ -10,70 +10,204 @@ const SLOT_ICONS = { weapon:'⚔️', armor:'🛡️', accessory:'💍' };
 let TOKEN = localStorage.getItem('ga_token') || null;
 let USERNAME = localStorage.getItem('ga_username') || null;
 let currentHunter = null, activeBattle = null, battleBusy = false, shownLogCount = 0, battleInventoryCache = null;
-let selectedGender = 'male';
-
-/* ====== PIXEL ART SPRITES ====== */
-// 16x16 sprites — clean RPG style
-const SKIN = '#f5c49c', SKIN2 = '#e8b088', HAIR_BROWN = '#5a3825', HAIR_PINK = '#c05080';
-const EYES = '#1a1a2e', SHIRT_GREEN = '#2d7a3a', SHIRT_MAROON = '#8b2252';
-const PANTS_BLUE = '#2a4a8a', BOOTS = '#4a3728', MOUTH = '#cc6060';
-
-const MALE_SPRITE = [
-  [0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0],
-  [0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0],
-  [0,0,0,0,0,2,1,1,1,1,2,0,0,0,0,0],
-  [0,0,0,0,0,2,6,1,1,6,2,0,0,0,0,0],
-  [0,0,0,0,0,2,1,8,8,1,2,0,0,0,0,0],
-  [0,0,0,0,0,2,1,1,9,1,2,0,0,0,0,0],
-  [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,3,3,3,3,0,0,0,0,0,0],
-  [0,0,0,0,7,3,3,3,3,3,3,7,0,0,0,0],
-  [0,0,0,0,7,3,3,3,3,3,3,7,0,0,0,0],
-  [0,0,0,0,7,3,3,3,3,3,3,7,0,0,0,0],
-  [0,0,0,0,0,0,4,4,4,4,0,0,0,0,0,0],
-  [0,0,0,0,0,0,4,0,0,4,0,0,0,0,0,0],
-  [0,0,0,0,0,0,4,0,0,4,0,0,0,0,0,0],
-  [0,0,0,0,0,0,5,5,5,5,0,0,0,0,0,0],
-];
-
-const FEMALE_SPRITE = [
-  [0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0],
-  [0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0],
-  [0,0,0,0,0,2,1,1,1,1,2,0,0,0,0,0],
-  [0,0,0,0,0,2,6,1,1,6,2,0,0,0,0,0],
-  [0,0,0,0,0,2,1,8,8,1,2,0,0,0,0,0],
-  [0,0,0,0,0,2,1,1,9,1,2,0,0,0,0,0],
-  [0,0,0,0,2,0,1,1,1,1,0,2,0,0,0,0],
-  [0,0,0,0,2,0,0,1,1,0,0,2,0,0,0,0],
-  [0,0,0,0,2,0,3,3,3,3,0,2,0,0,0,0],
-  [0,0,0,0,7,3,3,3,3,3,3,7,0,0,0,0],
-  [0,0,0,0,7,3,3,3,3,3,3,7,0,0,0,0],
-  [0,0,0,0,2,3,3,3,3,3,3,2,0,0,0,0],
-  [0,0,0,0,0,0,4,4,4,4,0,0,0,0,0,0],
-  [0,0,0,0,0,0,4,0,0,4,0,0,0,0,0,0],
-  [0,0,0,0,0,0,4,0,0,4,0,0,0,0,0,0],
-  [0,0,0,0,0,0,5,5,5,5,0,0,0,0,0,0],
-];
-
-const SPRITE_COLORS = {
-  0: null,
-  1: SKIN,
-  2: HAIR_BROWN,   // hair
-  3: SHIRT_GREEN,  // shirt
-  4: PANTS_BLUE,   // pants
-  5: BOOTS,        // shoes
-  6: EYES,         // eyes
-  7: SKIN,         // hands
-  8: SKIN2,        // nose
-  9: MOUTH,        // mouth
+let charOpts = {
+  gender: 'male', hair: 'short', hairColor: '#5a3825',
+  skin: '#f5c49c', outfit: 'tshirt', outfitColor: '#2d7a3a',
+  shoes: 'boots'
 };
 
-const FEMALE_SPRITE_COLORS = {
-  ...SPRITE_COLORS,
-  2: HAIR_PINK,
-  3: SHIRT_MAROON,
-};
+/* ====== DYNAMIC PIXEL ART SPRITE SYSTEM ====== */
+const _EYES = '#1a1a2e', _MOUTH = '#cc6060', _PANTS = '#2a4a8a';
+
+// Hair style grids — 5 rows each (rows 0-4 of 16x16)
+const HAIR_SHORT = [
+  '0000000000000000',
+  '0000000000000000',
+  '0000000000000000',
+  '0000000000000000',
+  '0000022222000000',
+];
+const HAIR_SPIKY = [
+  '0000002002000000',
+  '0000000000000000',
+  '0000020002000000',
+  '0000222222200000',
+  '0000022222000000',
+];
+const HAIR_LONG = [
+  '0000000000000000',
+  '0000000000000000',
+  '0000000000000000',
+  '0000022222000000',
+  '0000222222200000',
+];
+// Female long hair extends down the sides
+const HAIR_LONG_F = [
+  '0000000000000000',
+  '0000000000000000',
+  '0000000000000000',
+  '0000022222000000',
+  '0000222222200000',
+];
+
+// Head grid — rows 5-7 (face)
+const HEAD_MALE = [
+  '0000021111200000',
+  '0000026116200000',
+  '0000021191200000',
+  '0000001111000000',
+  '0000000110000000',
+];
+const HEAD_FEMALE = [
+  '0000021111200000',
+  '0000026116200000',
+  '0000021191200000',
+  '0000001111000000',
+  '0000000110000000',
+];
+
+// Body grids — rows 10-12 (torso)
+const BODY_TSHIRT = [
+  '0000033333000000',
+  '0000733333370000',
+  '0000733333370000',
+  '0000733333370000',
+];
+const BODY_ARMOR = [
+  '0000033333000000',
+  '0007333333337000',
+  '0000733333370000',
+  '0000033333000000',
+];
+const BODY_ROBE = [
+  '0000033333000000',
+  '0000333333300000',
+  '0003333333330000',
+  '0003333333330000',
+];
+// Female body has slight variation
+const BODY_TSHIRT_F = [
+  '0000033333000000',
+  '0000733333370000',
+  '0000733333370000',
+  '0000233333320000',
+];
+const BODY_ARMOR_F = [
+  '0000033333000000',
+  '0007333333337000',
+  '0000733333370000',
+  '0000233333320000',
+];
+const BODY_ROBE_F = [
+  '0000033333000000',
+  '0000333333300000',
+  '0003333333330000',
+  '0002333333332000',
+];
+
+// Legs & shoes — rows 14-15
+const LEGS_NORMAL = [
+  '0000004444000000',
+  '0000004004000000',
+];
+const SHOES_BOOTS = [
+  '0000005555000000',
+  '0000005005000000',
+];
+const SHOES_SANDALS = [
+  '0000005555000000',
+  '0000000550000000',
+];
+const SHOES_HEAVY = [
+  '0000055555000000',
+  '0000055005500000',
+];
+
+// Helper: parse string grid into number grid
+function parseGrid(lines) {
+  return lines.map(line => line.split('').map(Number));
+}
+
+// Build a full 16x16 sprite from character options
+function generateCharSprite(opts) {
+  const g = opts.gender || 'male';
+  const isF = g === 'female';
+  const rows = Array.from({length:16}, () => Array(16).fill(0));
+
+  // Hair (rows 0-4)
+  const hairMap = { short: HAIR_SHORT, spiky: HAIR_SPIKY, long: isF ? HAIR_LONG_F : HAIR_LONG };
+  const hairData = parseGrid(hairMap[opts.hair] || HAIR_SHORT);
+  for (let y = 0; y < hairData.length; y++)
+    for (let x = 0; x < 16; x++) if (hairData[y][x] === 2) rows[y][x] = 2;
+
+  // Head (rows 5-9)
+  const headData = parseGrid(isF ? HEAD_FEMALE : HEAD_MALE);
+  for (let y = 0; y < headData.length; y++)
+    for (let x = 0; x < 16; x++) if (headData[y][x] !== 0) rows[5 + y][x] = headData[y][x];
+
+  // Female long hair extends to sides of head
+  if (isF && (opts.hair === 'long')) {
+    for (let y = 5; y <= 11; y++) {
+      // Find leftmost and rightmost face pixel
+      let left = 16, right = 0;
+      for (let x = 0; x < 16; x++) if (rows[y][x] === 1) { left = Math.min(left, x); right = Math.max(right, x); }
+      if (left < 16) { rows[y][left - 1] = 2; rows[y][right + 1] = 2; }
+    }
+  }
+
+  // Body (rows 10-13)
+  const bodyMap = { tshirt: isF ? BODY_TSHIRT_F : BODY_TSHIRT, armor: isF ? BODY_ARMOR_F : BODY_ARMOR, robe: isF ? BODY_ROBE_F : BODY_ROBE };
+  const bodyData = parseGrid(bodyMap[opts.outfit] || BODY_TSHIRT);
+  for (let y = 0; y < bodyData.length; y++)
+    for (let x = 0; x < 16; x++) if (bodyData[y][x] !== 0) rows[10 + y][x] = bodyData[y][x];
+
+  // Legs (rows 14-15)
+  const legsData = parseGrid(LEGS_NORMAL);
+  for (let y = 0; y < legsData.length; y++)
+    for (let x = 0; x < 16; x++) if (legsData[y][x] !== 0) rows[14 + y][x] = legsData[y][x];
+
+  // Shoes (row 15 override)
+  const shoesMap = { boots: SHOES_BOOTS, sandals: SHOES_SANDALS, heavy: SHOES_HEAVY };
+  const shoesData = parseGrid(shoesMap[opts.shoes] || SHOES_BOOTS);
+  for (let x = 0; x < 16; x++) if (shoesData[0][x] !== 0) rows[14][x] = shoesData[0][x];
+  if (shoesData[1]) for (let x = 0; x < 16; x++) if (shoesData[1][x] !== 0) rows[15][x] = shoesData[1][x];
+
+  // Build color map
+  const skin = opts.skin || '#f5c49c';
+  const skinDark = darken(skin, 0.15);
+  const colors = {
+    0: null,
+    1: skin,       // skin
+    2: opts.hairColor || '#5a3825',  // hair
+    3: opts.outfitColor || '#2d7a3a', // outfit
+    4: _PANTS,     // pants
+    5: '#4a3728',  // shoes
+    6: _EYES,      // eyes
+    7: skin,       // hands
+    8: skinDark,   // nose
+    9: _MOUTH,     // mouth
+  };
+  return { grid: rows, colors };
+}
+
+// Simple darken helper
+function darken(hex, amount) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return '#' + [r,g,b].map(c => Math.max(0, Math.floor(c * (1 - amount))).toString(16).padStart(2,'0')).join('');
+}
+
+function renderCharSprite(canvas, opts) {
+  if (!canvas) return;
+  const { grid, colors } = generateCharSprite(opts);
+  const ctx = canvas.getContext('2d');
+  canvas.width = 16; canvas.height = 16;
+  ctx.clearRect(0, 0, 16, 16);
+  for (let y = 0; y < 16; y++)
+    for (let x = 0; x < 16; x++) {
+      const c = colors[grid[y][x]];
+      if (c) { ctx.fillStyle = c; ctx.fillRect(x, y, 1, 1); }
+    }
+}
 
 // Monster sprites
 const MONSTER_DEFAULT = [
@@ -116,24 +250,8 @@ const MONSTER_BOSS = [
 
 const MONSTER_COLORS = { 0:null, 4:'#5a2d2d', 6:'#ff4444' };
 
-function renderSpriteGrid(canvas, grid, colors) {
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  canvas.width = 16; canvas.height = 16;
-  ctx.clearRect(0,0,16,16);
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < (grid[y]||[]).length; x++) {
-      const c = colors[grid[y][x]];
-      if (!c) continue;
-      ctx.fillStyle = c;
-      ctx.fillRect(x, y, 1, 1);
-    }
-  }
-}
-
 function renderGenderPreviews() {
-  renderSpriteGrid($('preview-male'), MALE_SPRITE, SPRITE_COLORS);
-  renderSpriteGrid($('preview-female'), FEMALE_SPRITE, FEMALE_SPRITE_COLORS);
+  renderCharSprite($('creation-canvas'), charOpts);
 }
 
 /* ====== BATTLE ANIMATION STATE ====== */
@@ -234,16 +352,23 @@ async function bootAuth(){
 }
 
 /* ====== CHARACTER CREATION ====== */
-document.querySelectorAll('.gender-btn').forEach(btn=>btn.addEventListener('click',()=>{
-  document.querySelectorAll('.gender-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-  selectedGender = btn.dataset.gender;
-  renderGenderPreviews();
-}));
+// Option button handlers
+document.querySelectorAll('.creation-opt-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const field = btn.dataset.field;
+    const value = btn.dataset.value;
+    if (!field) return;
+    // Toggle active within same field
+    btn.closest('.creation-opt-row').querySelectorAll('.creation-opt-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    charOpts[field] = value;
+    renderGenderPreviews();
+  });
+});
 
 $('btn-create-character')?.addEventListener('click',async()=>{
   $('creation-error').textContent='';
-  localStorage.setItem('ga_gender',selectedGender);
-  try{const h=await api('/hunters/awaken',{method:'POST',auth:true,body:{name:$('creation-name-input')?.value?.trim()||undefined,gender:selectedGender}});currentHunter=h;await showApp();}
+  try{const h=await api('/hunters/awaken',{method:'POST',auth:true,body:{name:$('creation-name-input')?.value?.trim()||undefined,gender:charOpts.gender,characterData:charOpts}});currentHunter=h;await showApp();}
   catch(err){$('creation-error').textContent=err.message;}
 });
 
@@ -375,8 +500,8 @@ function renderBattleCanvas(state){
   ctx.strokeStyle=isDark?'rgba(94,234,212,0.12)':'rgba(13,148,136,0.15)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,H*0.6);ctx.lineTo(W,H*0.6);ctx.stroke();
   ctx.fillStyle=isDark?'rgba(94,234,212,0.06)':'rgba(13,148,136,0.1)';for(let i=0;i<12;i++)ctx.fillRect((i*73+20)%W,H*0.62+(i*17%25),3+(i%3),2);
   // Hunter
-  const isF=(currentHunter?.gender||selectedGender)==='female';
-  const hGrid=isF?FEMALE_SPRITE:MALE_SPRITE;const hColors=isF?FEMALE_SPRITE_COLORS:SPRITE_COLORS;
+  const hOpts = currentHunter?.characterData || charOpts;
+  const {grid:hGrid, colors:hColors} = generateCharSprite(hOpts);
   ctx.fillStyle='rgba(0,0,0,0.25)';ctx.beginPath();ctx.ellipse(hx+spSz/2,hy+spSz+4,spSz*0.3,5,0,0,Math.PI*2);ctx.fill();
   ctx.imageSmoothingEnabled=false;
   // Draw hunter pixel by pixel
@@ -423,7 +548,7 @@ function renderCharacter(h){
   const le=$('license');le.className='license'+(h.rank.code==='SSS'?' sss':'');le.style.setProperty('--rankglow',h.rank.color+'22');
   $('points-banner-host').innerHTML=h.statPoints>0?`<div class="points-banner"><div class="msg">Kamu punya <b>${h.statPoints}</b> poin stat.</div></div>`:'';
   // Char preview
-  const cc=$('lic-char-canvas');if(cc){const isF=h.gender==='female';renderSpriteGrid(cc,isF?FEMALE_SPRITE:MALE_SPRITE,isF?FEMALE_SPRITE_COLORS:SPRITE_COLORS);}
+  const cc=$('lic-char-canvas');if(cc){renderCharSprite(cc, h.characterData || {gender:h.gender, hair:'short', hairColor:'#5a3825', skin:'#f5c49c', outfit:'tshirt', outfitColor:'#2d7a3a', shoes:'boots'});}
   // Cosmetics
   const cos=$('lic-cosmetics');cos.innerHTML='';(h.equippedCosmetics||[]).forEach(ci=>{const d=COSMETIC_DEFS.find(c=>c.id===ci);if(!d)return;const b=document.createElement('span');b.className='cosmetic-badge equipped';b.textContent=`${d.icon} ${d.name}`;cos.appendChild(b);});
   const ab=document.createElement('span');ab.className='cosmetic-badge';ab.textContent=(h.equippedCosmetics||[]).length?'⚙️ Ganti':'🎨 Kosmetik';ab.addEventListener('click',openCosmeticsModal);cos.appendChild(ab);
@@ -469,7 +594,7 @@ function renderPendingSkill(skill,cs){const rc=RARITY_COLOR[skill.rarity.name]||
 $('btn-pull-cosmetic')?.addEventListener('click',async()=>{$('gacha-error').textContent='';try{const d=await api('/gacha/cosmetic',{method:'POST',auth:true});currentHunter=d.hunter;$('gacha-coins').textContent=currentHunter.coins.toLocaleString('id-ID');renderCharacter(currentHunter);const def=COSMETIC_DEFS.find(c=>c.id===d.cosmetic.id);const rc=RARITY_COLOR[d.cosmetic.rarity]||'var(--text-muted)';$('gacha-cosmetic-result').innerHTML=`<div class="gacha-reveal"><div class="icon">${def?.icon||'🎨'}</div><div class="info"><div class="n">${esc(d.cosmetic.name)}</div><div class="r" style="color:${rc}">${d.cosmetic.rarity} · ${d.cosmetic.alreadyOwned?'Sudah':'Baru!'}</div></div></div>`;}catch(e){$('gacha-error').textContent=e.message;}});
 
 /* ====== COSMETICS ====== */
-async function openCosmeticsModal(){$('cosmetics-error').textContent='';openModal('cosmetics-overlay');const h=$('cosmetics-list');h.innerHTML='<div class="list-empty">Memuat&hellip;</div>';try{const d=await api('/hunters/cosmetics',{auth:true});renderCosList(d.owned||[],d.equipped||[]);const isF=currentHunter?.gender==='female';renderSpriteGrid($('cosmetic-preview-canvas'),isF?FEMALE_SPRITE:MALE_SPRITE,isF?FEMALE_SPRITE_COLORS:SPRITE_COLORS);}catch(e){h.innerHTML=`<div class="list-empty">Error: ${esc(e.message)}</div>`;}}
+async function openCosmeticsModal(){$('cosmetics-error').textContent='';openModal('cosmetics-overlay');const h=$('cosmetics-list');h.innerHTML='<div class="list-empty">Memuat&hellip;</div>';try{const d=await api('/hunters/cosmetics',{auth:true});renderCosList(d.owned||[],d.equipped||[]);const opts=currentHunter?.characterData||{gender:currentHunter?.gender||'male',hair:'short',hairColor:'#5a3825',skin:'#f5c49c',outfit:'tshirt',outfitColor:'#2d7a3a',shoes:'boots'};renderCharSprite($('cosmetic-preview-canvas'),opts);}catch(e){h.innerHTML=`<div class="list-empty">Error: ${esc(e.message)}</div>`;}}
 function renderCosList(owned,equipped){const h=$('cosmetics-list');const es=new Set(equipped);if(!owned.length){h.innerHTML='<div class="list-empty">Belum ada kosmetik.</div>';return;}h.innerHTML='';owned.forEach(ci=>{const d=COSMETIC_DEFS.find(c=>c.id===ci);if(!d)return;const isE=es.has(ci);const rc=RARITY_COLOR[d.rarity]||'var(--text-muted)';const r=document.createElement('div');r.className='list-item';r.style.cursor='default';r.innerHTML=`<div class="list-badge" style="--c:${rc}">${d.icon}</div><div class="list-info"><div class="rn">${esc(d.name)} <span style="color:${rc}">— ${d.rarity}</span></div><div class="rm">${esc(d.desc)}</div></div><div><button class="mini-btn ${isE?'':'primary'}" data-ca="${isE?'unequip':'equip'}" data-cid="${ci}">${isE?'Lepas':'Pakai'}</button></div>`;h.appendChild(r);});
   h.querySelectorAll('[data-ca]').forEach(b=>b.addEventListener('click',async()=>{try{if(b.dataset.ca==='equip')await api('/hunters/cosmetics/equip',{method:'POST',auth:true,body:{cosmeticId:b.dataset.cid}});else await api('/hunters/cosmetics/unequip',{method:'POST',auth:true,body:{cosmeticId:b.dataset.cid}});await openCosmeticsModal();await refreshHunterQuiet();}catch(e){$('cosmetics-error').textContent=e.message;}}));}
 $('cosmetics-close')?.addEventListener('click',()=>closeModal('cosmetics-overlay'));
@@ -497,7 +622,7 @@ $('shop-overlay')?.addEventListener('click',e=>{if(e.target.id==='shop-overlay')
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){['roster-overlay','leaderboard-overlay','inventory-overlay','pets-overlay','profile-overlay','gacha-overlay','cosmetics-overlay'].forEach(closeModal);closeModal('shop-overlay');$('settings-overlay')?.classList.add('hidden');}});
 
 /* ====== BOOT ====== */
-console.log('🎮 Gerbang Awakening v8.2 loaded');
+console.log('🎮 Gerbang Awakening v9.0 loaded');
 showMainMenu();
 spawnEmbers();
 })();
