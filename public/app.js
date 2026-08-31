@@ -886,6 +886,7 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   const res = await fetch(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
   let data = null;
   try { data = await res.json(); } catch (e) {}
+  if (res.status === 304) return null;
   if (!res.ok) { const err = new Error((data && data.error) || 'Terjadi kesalahan.'); err.status = res.status; throw err; }
   return data;
 }
