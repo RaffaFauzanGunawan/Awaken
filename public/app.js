@@ -1057,7 +1057,9 @@ function renderBattleArena(state) {
 }
 
 function renderBattleCanvas(state) {
+  if (!state || !state.monster) return;
   const canvas = document.getElementById('battle-canvas');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = 800, H = 280;
   canvas.width = W;

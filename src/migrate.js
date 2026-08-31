@@ -10,9 +10,13 @@ async function columnExists(table, column) {
 }
 
 async function addColumn(table, column, ddl) {
-  if (await columnExists(table, column)) return;
-  await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN ${ddl}`);
-  console.log(`  + kolom ${table}.${column}`);
+  try {
+    if (await columnExists(table, column)) return;
+    await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN ${ddl}`);
+    console.log(`  + kolom ${table}.${column}`);
+  } catch (err) {
+    console.error(`  ⚠ Gagal tambah kolom ${table}.${column}: ${err.message}`);
+  }
 }
 
 async function tableExists(table) {
@@ -25,6 +29,13 @@ async function tableExists(table) {
 }
 
 async function migrate() {
+  // Pastikan tabel hunters ada dulu
+  const huntersExist = await tableExists('hunters');
+  if (!huntersExist) {
+    console.log('⚠️  Tabel hunters belum ada — skip migration (jalankan schema.sql dulu).');
+    return;
+  }
+
   await addColumn('hunters', 'gold', '`gold` INT UNSIGNED NOT NULL DEFAULT 20');
   await addColumn('hunters', 'hp_current', '`hp_current` INT UNSIGNED NULL');
   await addColumn('hunters', 'mp_current', '`mp_current` INT UNSIGNED NULL');

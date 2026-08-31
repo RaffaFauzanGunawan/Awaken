@@ -49,10 +49,13 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 migrate().then(() => {
+  console.log('✅ Database migration selesai.');
   app.listen(PORT, () => {
     console.log(`⚡ Gerbang Awakening berjalan di http://localhost:${PORT}`);
   });
 }).catch((err) => {
-  console.error('Migration gagal:', err);
-  process.exit(1);
+  console.error('⚠️ Migration error (server tetap jalan):', err.message);
+  app.listen(PORT, () => {
+    console.log(`⚡ Gerbang Awakening berjalan di http://localhost:${PORT} (tanpa migration)`);
+  });
 });
