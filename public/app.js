@@ -202,11 +202,11 @@ document.querySelectorAll('.theme-opt').forEach(b=>b.addEventListener('click',()
 /* ====== SCREEN MANAGEMENT ====== */
 const mainMenu=$('main-menu'), authScreen=$('auth-screen'), creationScreen=$('creation-screen'), appEl=$('app'), appHeader=$('app-header'), navLoggedIn=$('nav-loggedin'), navUsername=$('nav-username');
 
-function showMainMenu(){ mainMenu?.classList.remove('hidden'); authScreen?.classList.add('hidden'); creationScreen?.classList.add('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.add('hidden'); document.body.classList.add('menu-open'); }
-function showAuth(){ mainMenu?.classList.add('hidden'); authScreen?.classList.remove('hidden'); creationScreen?.classList.add('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.remove('hidden'); document.body.classList.remove('menu-open'); }
-function showCreation(){ mainMenu?.classList.add('hidden'); authScreen?.classList.add('hidden'); creationScreen?.classList.remove('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.remove('hidden'); document.body.classList.remove('menu-open'); renderGenderPreviews(); }
+function showMainMenu(){ console.log('📌 showMainMenu'); mainMenu?.classList.remove('hidden'); authScreen?.classList.add('hidden'); creationScreen?.classList.add('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.add('hidden'); document.body.classList.add('menu-open'); }
+function showAuth(){ console.log('📌 showAuth, mainMenu=',!!mainMenu,'authScreen=',!!authScreen); mainMenu?.classList.add('hidden'); authScreen?.classList.remove('hidden'); creationScreen?.classList.add('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.remove('hidden'); document.body.classList.remove('menu-open'); }
+function showCreation(){ console.log('📌 showCreation'); mainMenu?.classList.add('hidden'); authScreen?.classList.add('hidden'); creationScreen?.classList.remove('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.remove('hidden'); document.body.classList.remove('menu-open'); renderGenderPreviews(); }
 
-$('btn-start-game')?.addEventListener('click',()=>{ if(TOKEN)bootAuth(); else showAuth(); });
+$('btn-start-game')?.addEventListener('click',()=>{ console.log('⚔️ btn-start-game clicked, TOKEN=',!!TOKEN); if(TOKEN)bootAuth(); else showAuth(); });
 $('btn-exit-web')?.addEventListener('click',()=>{ if(confirm('Yakin keluar?')){window.close();document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;color:#888">Terima kasih!</div>';} });
 
 /* ====== AUTH ====== */
@@ -216,10 +216,12 @@ document.querySelectorAll('.auth-tab').forEach(t=>t.addEventListener('click',()=
 }));
 
 async function showApp(){
+  console.log('🎮 showApp called, USERNAME=',USERNAME);
   authScreen?.classList.add('hidden'); creationScreen?.classList.add('hidden');
   appHeader?.classList.remove('hidden'); navLoggedIn?.classList.remove('hidden');
   navUsername.textContent = USERNAME; loadOdds();
   await Promise.all([refreshHunter(),refreshAvatar()]);
+  console.log('🎮 showApp done, currentHunter=',!!currentHunter);
 }
 
 $('form-login')?.addEventListener('submit',async e=>{
@@ -236,9 +238,10 @@ $('btn-logout')?.addEventListener('click',()=>{TOKEN=null;USERNAME=null;currentH
 $('btn-back-to-login')?.addEventListener('click',()=>showAuth());
 
 async function bootAuth(){
+  console.log('🔑 bootAuth called, TOKEN=',TOKEN?.substring(0,10)+'...');
   if(!TOKEN){showAuth();return;}
-  try{const me=await api('/auth/me',{auth:true});if(!me||!me.username)throw new Error('Session expired');USERNAME=me.username;localStorage.setItem('ga_username',USERNAME);await showApp();}
-  catch(err){TOKEN=null;USERNAME=null;localStorage.removeItem('ga_token');localStorage.removeItem('ga_username');showAuth();}
+  try{const me=await api('/auth/me',{auth:true});console.log('🔑 /auth/me response:',me);if(!me||!me.username)throw new Error('Session expired');USERNAME=me.username;localStorage.setItem('ga_username',USERNAME);await showApp();}
+  catch(err){console.error('🔑 bootAuth error:',err.message);TOKEN=null;USERNAME=null;localStorage.removeItem('ga_token');localStorage.removeItem('ga_username');showAuth();}
 }
 
 /* ====== CHARACTER CREATION ====== */
@@ -260,6 +263,7 @@ async function refreshHunter(){try{currentHunter=await api('/hunters/mine',{auth
 async function refreshHunterQuiet(){try{currentHunter=await api('/hunters/mine',{auth:true});if(currentHunter)renderCharacter(currentHunter);}catch(e){}}
 
 function applyHunterState(){
+  console.log('🛡️ applyHunterState, hunter=',!!currentHunter);
   if(!currentHunter){showCreation();return;}
   appEl?.classList.remove('hidden'); $('fight-controls')?.classList.remove('hidden'); $('character-section')?.classList.remove('hidden');
   $('hero-eyebrow').textContent='— Gerbang Menanti —';
