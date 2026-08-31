@@ -116,21 +116,138 @@
 
   <!-- ===== CHARACTER CREATION ===== -->
   <section class="creation-screen hidden" id="creation-screen">
-    <div class="auth-card creation-card">
+    <div class="auth-card creation-card" style="max-width:600px;">
       <div class="glyph">⚔️</div>
       <h2>Buat Karaktermu</h2>
-      <p class="desc">Pilih jenis kelamin karakter pixel dan beri nama. Pilihan ini permanen dan hanya bisa diubah saat reset.</p>
-      <div class="gender-select">
-        <button class="gender-btn active" data-gender="male" id="gender-male">
-          <canvas id="preview-male" width="16" height="16"></canvas>
-          <span class="gender-label">Cowok</span>
-        </button>
-        <button class="gender-btn" data-gender="female" id="gender-female">
-          <canvas id="preview-female" width="16" height="16"></canvas>
-          <span class="gender-label">Cewek</span>
-        </button>
+      <p class="desc">Kustomisasi karakter pixelmu. Pilih semua opsi di bawah lalu beri nama.</p>
+
+      <div class="creation-preview">
+        <canvas id="preview-character" width="16" height="16"></canvas>
       </div>
-      <div class="creation-name">
+
+      <div class="creation-options">
+        <div class="creation-group">
+          <label>Jenis Kelamin</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="gender" data-dir="1"><span id="opt-gender">Cowok</span></button>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Gaya Rambut</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="hairStyle" data-dir="-1">◀</button>
+            <span id="opt-hair-style">Pendek</span>
+            <button class="creation-opt-btn" data-field="hairStyle" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Warna Rambut</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="hairColor" data-dir="-1">◀</button>
+            <span id="opt-hair-color"></span>
+            <button class="creation-opt-btn" data-field="hairColor" data-dir="1">▶</button>
+            <span class="creation-swatch" id="swatch-hair"></span>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Warna Kulit</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="skinColor" data-dir="-1">◀</button>
+            <span id="opt-skin-color"></span>
+            <button class="creation-opt-btn" data-field="skinColor" data-dir="1">▶</button>
+            <span class="creation-swatch" id="swatch-skin"></span>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Mata</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="eyeStyle" data-dir="-1">◀</button>
+            <span id="opt-eye-style">Normal</span>
+            <button class="creation-opt-btn" data-field="eyeStyle" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Mulut</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="mouthStyle" data-dir="-1">◀</button>
+            <span id="opt-mouth-style">Senyum</span>
+            <button class="creation-opt-btn" data-field="mouthStyle" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Gaya Baju</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="shirtStyle" data-dir="-1">◀</button>
+            <span id="opt-shirt-style">Kaos</span>
+            <button class="creation-opt-btn" data-field="shirtStyle" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Warna Baju</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="shirtColor" data-dir="-1">◀</button>
+            <span id="opt-shirt-color"></span>
+            <button class="creation-opt-btn" data-field="shirtColor" data-dir="1">▶</button>
+            <span class="creation-swatch" id="swatch-shirt"></span>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Gaya Celana</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="pantsStyle" data-dir="-1">◀</button>
+            <span id="opt-pants-style">Panjang</span>
+            <button class="creation-opt-btn" data-field="pantsStyle" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Warna Celana</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="pantsColor" data-dir="-1">◀</button>
+            <span id="opt-pants-color"></span>
+            <button class="creation-opt-btn" data-field="pantsColor" data-dir="1">▶</button>
+            <span class="creation-swatch" id="swatch-pants"></span>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Sepatu</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="shoeStyle" data-dir="-1">◀</button>
+            <span id="opt-shoe-style">Boots</span>
+            <button class="creation-opt-btn" data-field="shoeStyle" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Warna Sepatu</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="shoeColor" data-dir="-1">◀</button>
+            <span id="opt-shoe-color"></span>
+            <button class="creation-opt-btn" data-field="shoeColor" data-dir="1">▶</button>
+            <span class="creation-swatch" id="swatch-shoe"></span>
+          </div>
+        </div>
+
+        <div class="creation-group">
+          <label>Aksesori Kepala</label>
+          <div class="creation-opt-row">
+            <button class="creation-opt-btn" data-field="headAccessory" data-dir="1">◀</button>
+            <span id="opt-head-style">Tidak Ada</span>
+            <button class="creation-opt-btn" data-field="headAccessory" data-dir="1">▶</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="creation-name" style="margin-top:16px;">
         <label for="creation-name-input" class="sr-only">Nama Karakter</label>
         <input id="creation-name-input" type="text" maxlength="24" placeholder="Nama karaktermu (opsional)">
       </div>

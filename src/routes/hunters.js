@@ -38,6 +38,9 @@ function mapHunterRow(row, bonuses) {
   const equippedCosmetics = row.equipped_cosmetics
     ? (typeof row.equipped_cosmetics === 'string' ? JSON.parse(row.equipped_cosmetics) : row.equipped_cosmetics)
     : [];
+  const characterData = row.character_data
+    ? (typeof row.character_data === 'string' ? JSON.parse(row.character_data) : row.character_data)
+    : null;
   return {
     id: row.id,
     name: row.name,
@@ -62,6 +65,7 @@ function mapHunterRow(row, bonuses) {
     gender,
     cosmetics,
     equippedCosmetics,
+    characterData,
   };
 }
 
@@ -101,6 +105,7 @@ router.post('/awaken', requireAuth, async (req, res) => {
 
     const name = req.body && req.body.name ? String(req.body.name).slice(0, 24) : req.username;
     const gender = (req.body && req.body.gender === 'female') ? 'female' : 'male';
+    const characterData = req.body && req.body.characterData ? JSON.stringify(req.body.characterData) : null;
     const hunter = rollHunter(name);
     const skillsJson = JSON.stringify(
       hunter.skills.map((s) => ({ name: s.name, rarityName: s.rarity.name, rarityColor: s.rarity.color }))
@@ -121,10 +126,14 @@ router.post('/awaken', requireAuth, async (req, res) => {
       ]
     );
 
-    // Set gender — toleran jika kolom belum ada (migrasi belum dijalankan)
+    // Set gender & character data — toleran jika kolom belum ada
     try {
-      await pool.query('UPDATE hunters SET gender = ? WHERE id = ?', [gender, result.insertId]);
-    } catch (e) { /* kolom gender mungkin belum ada */ }
+      const updates = ['gender = ?'];
+      const params = [gender];
+      if (characterData) { updates.push('character_data = ?'); params.push(characterData); }
+      params.push(result.insertId);
+      await pool.query(`UPDATE hunters SET ${updates.join(', ')} WHERE id = ?`, params);
+    } catch (e) { /* kolom mungkin belum ada */ }
 
     // Bekal awal supaya Pemburu baru tidak masuk Gerbang dengan tangan kosong.
     await pool.query(

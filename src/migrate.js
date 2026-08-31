@@ -168,6 +168,7 @@ async function migrate() {
   await addColumn('hunters', 'gender', "`gender` VARCHAR(8) NOT NULL DEFAULT 'male'");
   await addColumn('hunters', 'cosmetics', '`cosmetics` JSON NULL');
   await addColumn('hunters', 'equipped_cosmetics', '`equipped_cosmetics` JSON NULL');
+  await addColumn('hunters', 'character_data', '`character_data` JSON NULL');
 
   // ========== ISI DEFAULT DATA ==========
 
