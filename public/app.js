@@ -1001,7 +1001,12 @@ $('btn-back-to-login')?.addEventListener('click', () => showAuth());
 
 async function bootAuth() {
   if (!TOKEN) { showAuth(); return; }
-  try { const me = await api('/auth/me', { auth: true }); USERNAME = me.username; localStorage.setItem('ga_username', USERNAME); await showApp(); }
+  try {
+    const me = await api('/auth/me', { auth: true });
+    if (!me || !me.username) throw new Error('Session expired');
+    USERNAME = me.username; localStorage.setItem('ga_username', USERNAME);
+    await showApp();
+  }
   catch (err) { TOKEN = null; USERNAME = null; localStorage.removeItem('ga_token'); localStorage.removeItem('ga_username'); showAuth(); }
 }
 
@@ -1644,6 +1649,7 @@ function renderSpriteToCanvas(canvas, spriteData, palette) {
 /* ================================================================
    BOOT
    ================================================================ */
+console.log('🎮 Gerbang Awakening v8 loaded');
 showMainMenu();
 spawnEmbers();
 
