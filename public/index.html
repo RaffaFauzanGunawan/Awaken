@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GERBANG AWAKENING — Sistem Bangkitkan Kekuatan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;900&family=Cinzel+Decorative:wght@700;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<div id="embers"></div>
+
+<!-- ===== MAIN MENU ===== -->
+<div class="main-menu" id="main-menu">
+  <div class="menu-glow"></div>
+  <div class="menu-content">
+    <div class="menu-glyph">◈</div>
+    <h1 class="menu-title">GERBANG<br>AWAKENING</h1>
+    <p class="menu-sub">Sistem Bangkitkan Kekuatan Pemburu</p>
+    <div class="menu-buttons">
+      <button class="menu-btn primary" id="btn-start-game">⚔️ Mulai Game</button>
+      <button class="menu-btn" id="btn-settings-main">⚙️ Pengaturan</button>
+      <button class="menu-btn danger" id="btn-exit-web">🚪 Keluar</button>
+    </div>
+    <p class="menu-hint">Node.js + Express + MySQL · RNG dihitung di server</p>
+  </div>
+</div>
+
+<!-- ===== SETTINGS OVERLAY ===== -->
+<div class="settings-overlay hidden" id="settings-overlay">
+  <div class="settings-panel">
+    <div class="settings-head">
+      <h3>⚙️ Pengaturan</h3>
+      <button class="modal-close" id="btn-settings-close" aria-label="Tutup">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-item">
+        <div class="setting-label">
+          <span class="setting-icon">🎨</span>
+          <div>
+            <div class="setting-name">Mode Tampilan</div>
+            <div class="setting-desc">Ganti antara terang dan gelap</div>
+          </div>
+        </div>
+        <div class="theme-toggle" id="theme-toggle">
+          <button class="theme-opt active" data-theme="dark">🌙 Gelap</button>
+          <button class="theme-opt" data-theme="light">☀️ Terang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hidden" id="app-header">
+    <div class="brand">
+      <span>◈</span>
+      <div>GERBANG AWAKENING<small>Sistem Deteksi Kekuatan Pemburu</small></div>
+    </div>
+    <nav id="nav-loggedin" class="hidden">
+      <button class="avatar-btn" id="btn-profile" title="Ubah foto profil">
+        <img id="nav-avatar-img" class="hidden" alt="Avatar">
+        <span id="nav-avatar-fallback">👤</span>
+      </button>
+      <span class="user-chip">Masuk sebagai <b id="nav-username"></b></span>
+      <button class="nav-btn" id="btn-leaderboard">Papan Peringkat</button>
+      <button class="nav-btn" id="btn-roster">Riwayat Pertarungan</button>
+      <button class="nav-btn" id="btn-inventory">Inventaris</button>
+      <button class="nav-btn" id="btn-shop">Toko</button>
+      <button class="nav-btn" id="btn-gacha">Gacha</button>
+      <button class="nav-btn" id="btn-pets">Peliharaan</button>
+      <button class="nav-btn" id="btn-settings-nav" title="Pengaturan">⚙️</button>
+      <button class="nav-btn danger" id="btn-logout">Keluar</button>
+    </nav>
+  </header>
+
+  <!-- ===== AUTH SCREEN ===== -->
+  <section class="auth-screen hidden" id="auth-screen">
+    <div class="auth-card">
+      <div class="glyph">◈</div>
+      <h2>Masuki Gerbang Awakening</h2>
+      <p class="desc">Daftar sebagai Pemburu untuk menyimpan riwayat awakening-mu dan tampil di papan peringkat.</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Masuk</button>
+        <button class="auth-tab" data-tab="register">Daftar</button>
+      </div>
+      <form class="auth-form" id="form-login">
+        <div>
+          <label for="login-username">Username</label>
+          <input id="login-username" type="text" autocomplete="username" required>
+        </div>
+        <div>
+          <label for="login-password">Password</label>
+          <input id="login-password" type="password" autocomplete="current-password" required>
+        </div>
+        <p class="auth-error" id="login-error"></p>
+        <button class="auth-submit" type="submit">Masuk</button>
+      </form>
+      <form class="auth-form hidden" id="form-register">
+        <div>
+          <label for="reg-username">Username</label>
+          <input id="reg-username" type="text" autocomplete="username" minlength="3" maxlength="20" required>
+        </div>
+        <div>
+          <label for="reg-password">Password</label>
+          <input id="reg-password" type="password" autocomplete="new-password" minlength="6" required>
+        </div>
+        <p class="auth-error" id="register-error"></p>
+        <button class="auth-submit" type="submit">Daftar & Masuk</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===== CHARACTER CREATION ===== -->
+  <section class="creation-screen hidden" id="creation-screen">
+    <div class="auth-card creation-card">
+      <div class="glyph">⚔️</div>
+      <h2>Buat Karaktermu</h2>
+      <p class="desc">Pilih jenis kelamin karakter pixel dan beri nama. Pilihan ini permanen dan hanya bisa diubah saat reset.</p>
+      <div class="gender-select">
+        <button class="gender-btn active" data-gender="male" id="gender-male">
+          <canvas id="preview-male" width="16" height="16"></canvas>
+          <span class="gender-label">Cowok</span>
+        </button>
+        <button class="gender-btn" data-gender="female" id="gender-female">
+          <canvas id="preview-female" width="16" height="16"></canvas>
+          <span class="gender-label">Cewek</span>
+        </button>
+      </div>
+      <div class="creation-name">
+        <label for="creation-name-input" class="sr-only">Nama Karakter</label>
+        <input id="creation-name-input" type="text" maxlength="24" placeholder="Nama karaktermu (opsional)">
+      </div>
+      <p class="auth-error" id="creation-error"></p>
+      <button class="auth-submit" id="btn-create-character">Masuki Gerbang</button>
+      <button class="danger-link" id="btn-back-to-login" style="margin-top:12px; display:block; margin-left:auto; margin-right:auto;">← Kembali ke Login</button>
+    </div>
+  </section>
+
+  <!-- ===== MAIN GAME APP ===== -->
+  <div id="app" class="hidden">
+    <section class="hero">
+      <div class="eyebrow" id="hero-eyebrow">— Anomali Mana Terdeteksi —</div>
+      <h1 id="hero-title">Apa <em>kekuatanmu</em><br>di balik Gerbang?</h1>
+      <p class="sub" id="hero-sub">Setiap Gerbang membangkitkan potensi yang berbeda. Peringkat, kelas, elemen, hingga skill — semuanya ditentukan murni oleh keberuntungan saat Gerbang terbuka, dihitung langsung di server.</p>
+
+      <div class="gate-stage" id="gate-stage">
+        <svg viewBox="0 0 300 300" aria-hidden="true">
+          <defs>
+            <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#5eead4" stop-opacity="0.9"/>
+              <stop offset="60%" stop-color="#a78bfa" stop-opacity="0.5"/>
+              <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle class="gate-core" cx="150" cy="150" r="55"/>
+          <g class="ring ring-outer" stroke="#5eead4" stroke-opacity="0.55" fill="none">
+            <circle cx="150" cy="150" r="140" stroke-width="1"/>
+            <g stroke-width="2">
+              <line x1="150" y1="6" x2="150" y2="20"/>
+              <line x1="150" y1="280" x2="150" y2="294"/>
+              <line x1="6" y1="150" x2="20" y2="150"/>
+              <line x1="280" y1="150" x2="294" y2="150"/>
+              <line x1="52" y1="52" x2="62" y2="62"/>
+              <line x1="238" y1="238" x2="248" y2="248"/>
+              <line x1="52" y1="248" x2="62" y2="238"/>
+              <line x1="238" y1="62" x2="248" y2="52"/>
+            </g>
+          </g>
+          <g class="ring ring-mid" stroke="#a78bfa" stroke-opacity="0.5" fill="none">
+            <circle cx="150" cy="150" r="108" stroke-width="1" stroke-dasharray="4 10"/>
+          </g>
+          <g class="ring ring-inner" stroke="#5eead4" stroke-opacity="0.75" fill="none">
+            <circle cx="150" cy="150" r="78" stroke-width="1.5"/>
+          </g>
+        </svg>
+        <div class="gate-label" id="gate-label">Gerbang Kelas ???</div>
+      </div>
+
+      <div id="fight-controls" class="hidden">
+        <div class="gate-select-row">
+          <label for="gate-rank-select" class="sr-only">Peringkat Gerbang</label>
+          <select class="gate-select" id="gate-rank-select"></select>
+          <button class="awaken-btn" id="btn-fight">Masuki Gerbang</button>
+        </div>
+        <p class="hint">Semakin tinggi peringkat Gerbang, semakin kuat monsternya — tapi XP yang didapat juga lebih besar.</p>
+        <p class="hint lock-hint hidden" id="gate-lock-hint"></p>
+      </div>
+
+      <div class="syslog" id="syslog" aria-live="polite"></div>
+
+      <button class="odds-toggle" id="odds-toggle" aria-expanded="false">Lihat peluang peringkat & elemen awakening ↓</button>
+      <div class="odds-panel" id="odds-panel"></div>
+    </section>
+
+    <!-- ===== BATTLE ARENA (Landscape Turn-Based) ===== -->
+    <section id="battle-result">
+      <div class="section-label" style="text-align:center; margin-bottom:14px;">— Arena Pertarungan —</div>
+      <div class="license" id="battle-card">
+        <div class="battle-landscape" id="battle-landscape">
+          <canvas id="battle-canvas" width="800" height="280"></canvas>
+          <div class="battle-hud">
+            <div class="hud-left">
+              <span class="hud-name" id="hud-hunter-name">Pemburu</span>
+              <div class="hud-bar">
+                <div class="hud-bar-fill hp-hunter" id="hud-hunter-hp-fill"></div>
+              </div>
+              <span class="hud-hp-text" id="hud-hunter-hp"></span>
+            </div>
+            <div class="battle-turn-display" id="battle-turn-display">Giliran 1</div>
+            <div class="hud-right">
+              <span class="hud-name" id="hud-monster-name"></span>
+              <div class="hud-bar">
+                <div class="hud-bar-fill hp-monster" id="hud-monster-hp-fill"></div>
+              </div>
+              <span class="hud-hp-text" id="hud-monster-hp"></span>
+            </div>
+          </div>
+          <div class="battle-statuses" id="battle-statuses"></div>
+        </div>
+
+        <div class="battle-log" id="battle-log"></div>
+
+        <div class="battle-actions" id="battle-actions">
+          <button class="act-btn" id="act-attack">⚔️<span>Serang</span></button>
+          <button class="act-btn" id="act-skill-toggle">✨<span>Skill</span></button>
+          <button class="act-btn" id="act-item-toggle">🎒<span>Item</span></button>
+          <button class="act-btn flee" id="act-flee">🏃<span>Kabur</span></button>
+        </div>
+        <div class="battle-submenu hidden" id="skill-menu"></div>
+        <div class="battle-submenu hidden" id="item-menu"></div>
+
+        <div class="battle-banner hidden" id="battle-banner"></div>
+        <div class="battle-xp hidden" id="battle-xp"></div>
+        <div class="item-drop hidden" id="item-drop-banner"></div>
+        <div class="levelup-banner hidden" id="levelup-banner"></div>
+        <div class="battle-continue-row hidden" id="battle-continue-row">
+          <button class="mini-btn primary" id="btn-battle-continue">Lanjutkan</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CHARACTER SHEET ===== -->
+    <section id="character-section" class="hidden" style="margin-top:56px;">
+      <div class="section-label" style="text-align:center; margin-bottom:14px;">— Lisensi Pemburu —</div>
+      <div class="license" id="license">
+        <div class="license-top">
+          <div>
+            <div class="license-id" id="lic-id"></div>
+            <div class="license-name" id="lic-name"></div>
+            <div class="license-title" id="lic-title"></div>
+          </div>
+          <div class="rank-badge" id="lic-rank"></div>
+        </div>
+
+        <div class="meta-row">
+          <div class="meta-item"><div class="k">Kelas</div><div class="v" id="lic-class"></div></div>
+          <div class="meta-item"><div class="k">Elemen</div><div class="v" id="lic-element"></div></div>
+          <div class="meta-item"><div class="k">Level</div><div class="v" id="lic-level-pill"></div></div>
+          <div class="meta-item"><div class="k">Jenis</div><div class="v" id="lic-gender"></div></div>
+        </div>
+
+        <div class="xp-row">
+          <span class="xp-label">XP</span>
+          <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+          <span class="xp-nums" id="xp-nums"></span>
+        </div>
+
+        <div class="power-score"><span class="num" id="lic-power"></span><span class="lbl">Skor Kekuatan</span></div>
+        <div class="coin-display"><span class="ic">🪙</span><span id="lic-coins">0</span><span class="lbl">Coin</span></div>
+
+        <div id="points-banner-host"></div>
+
+        <div class="section-label">Karakter</div>
+        <div class="char-preview-section">
+          <canvas id="lic-char-canvas" width="16" height="16"></canvas>
+          <div class="char-cosmetics" id="lic-cosmetics"></div>
+        </div>
+
+        <div class="section-label">Statistik Inti</div>
+        <div class="stat-alloc-grid" id="lic-stats"></div>
+
+        <div class="section-label">Perlengkapan</div>
+        <div class="equip-slots" id="lic-equip-slots"></div>
+
+        <div class="section-label">Skill Bangkit</div>
+        <div class="skills" id="lic-skills"></div>
+
+        <div class="license-actions">
+          <button class="mini-btn" id="btn-copy">Salin Ringkasan</button>
+        </div>
+
+        <div class="danger-zone">
+          <button class="danger-link" id="btn-reset-char">Reset Karakter (mulai ulang dari awakening baru)</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>Gerbang Awakening · Node.js + Express + MySQL · RNG dihitung di server</footer>
+</div>
+
+<!-- ===== BATTLE HISTORY MODAL ===== -->
+<div class="modal-overlay" id="roster-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Riwayat Pertarungan</h3>
+      <button class="modal-close" id="roster-close" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="list-summary" id="roster-summary"></div>
+      <div id="roster-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LEADERBOARD MODAL ===== -->
+<div class="modal-overlay" id="leaderboard-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Papan Peringkat Global</h3>
+      <button class="modal-close" id="leaderboard-close" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="list-summary" id="leaderboard-summary"></div>
+      <div id="leaderboard-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== INVENTORY MODAL ===== -->
+<div class="modal-overlay" id="inventory-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Inventaris Pemburu</h3>
+      <button class="modal-close" id="inventory-close" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="auth-error" id="inventory-error"></p>
+      <div class="section-label">Perlengkapan Terpasang</div>
+      <div class="equip-slots" id="inv-equip-slots"></div>
+      <div class="section-label" style="margin-top:22px;">Semua Item</div>
+      <div id="inventory-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SHOP MODAL ===== -->
+<div class="modal-overlay" id="shop-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Toko Pemburu</h3>
+      <button class="modal-close" id="shop-close" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="shop-topbar">
+        <div class="shop-coins">🪙 <span id="shop-coins">0</span> Coin</div>
+        <div class="shop-timer" id="shop-timer">Refresh dalam --:--</div>
+      </div>
+      <p class="auth-error" id="shop-error"></p>
+      <div id="shop-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GACHA MODAL ===== -->
+<div class="modal-overlay" id="gacha-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Gacha Pemburu</h3>
+      <button class="modal-close" id="gacha-close" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="shop-topbar">
+        <div class="shop-coins">🪙 <span id="gacha-coins">0</span> Coin</div>
+        <div class="hint">100 coin per tarikan</div>
+      </div>
+      <p class="auth-error" id="gacha-error"></p>
+
+      <div class="gacha-section">
+        <div class="gacha-section-head">
+          <h4>⚔️ Gacha Senjata</h4>
+          <button class="mini-btn primary" id="btn-pull-weapon">Tarik (100 🪙)</button>
+        </div>
+        <div id="gacha-weapon-result"></div>
+      </div>
+
+      <div class="gacha-section">
+        <div class="gacha-section-head">
+          <h4>📖 Gacha Skill</h4>
+          <button class="mini-btn primary" id="btn-pull-skill">Tarik (100 🪙)</button>
+        </div>
+        <div id="gacha-skill-result"></div>
+      </div>
+
+      <div class="gacha-section">
+        <div class="gacha-section-head">
+          <h4>🎨 Gacha Kosmetik</h4>
+          <button class="mini-btn primary" id="btn-pull-cosmetic">Tarik (100 🪙)</button>
+        </div>
+        <div id="gacha-cosmetic-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PETS MODAL ===== -->
+<div class="modal-overlay" id="pets-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Peliharaan</h3>
+      <button class="modal-close" id="pets-close" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="auth-error" id="pets-error"></p>
+      <p class="pet-flavor hidden" id="pet-flavor-msg"></p>
+      <div id="pets-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== COSMETICS MODAL ===== -->
+<div class="modal-overlay" id="cosmetics-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Kosmetik Karakter</h3>
+      <button class="modal-close" id="cosmetics-close" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="auth-error" id="cosmetics-error"></p>
+      <div class="cosmetic-preview-wrap">
+        <canvas id="cosmetic-preview-canvas" width="16" height="16"></canvas>
+      </div>
+      <div id="cosmetics-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PROFILE MODAL ===== -->
+<div class="modal-overlay" id="profile-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Foto Profil</h3>
+      <button class="modal-close" id="profile-close" aria-label="Tutup">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="profile-preview-wrap">
+        <div class="profile-preview" id="profile-preview">
+          <img id="profile-preview-img" class="hidden" alt="Preview foto profil">
+          <span id="profile-preview-fallback">👤</span>
+        </div>
+      </div>
+      <label for="profile-file-input" class="mini-btn primary profile-upload-btn">Pilih Foto</label>
+      <input type="file" id="profile-file-input" accept="image/png,image/jpeg,image/webp" class="hidden">
+      <p class="hint" style="text-align:center; margin-top:10px;">Foto otomatis dipotong persegi dan diperkecil sebelum disimpan.</p>
+      <p class="auth-error" id="profile-error"></p>
+      <div class="license-actions" style="justify-content:center; margin-top:16px;">
+        <button class="mini-btn primary" id="btn-save-avatar" disabled>Simpan Foto</button>
+        <button class="mini-btn" id="btn-remove-avatar">Hapus Foto</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
