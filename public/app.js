@@ -1,6 +1,16 @@
 (() => {
 "use strict";
 
+// Debug: catch any runtime error and show it
+window.onerror = function(msg, url, line, col, err) {
+  document.body.innerHTML = '<div style="padding:40px;color:#ff4444;font-family:monospace;background:#111;min-height:100vh;"><h2>⚠️ JavaScript Error</h2><pre>' + msg + '</pre><p>Line: ' + line + ', Col: ' + col + '</p><pre>' + (err && err.stack ? err.stack : '') + '</pre></div>';
+};
+window.onunhandledrejection = function(e) {
+  document.body.innerHTML = '<div style="padding:40px;color:#ff4444;font-family:monospace;background:#111;min-height:100vh;"><h2>⚠️ Promise Error</h2><pre>' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '</pre><pre>' + (e.reason && e.reason.stack ? e.reason.stack : '') + '</pre></div>';
+};
+
+console.log('🔧 app.js IIFE starting...');
+
 const $ = id => document.getElementById(id);
 const API = '/api';
 const STAT_NAMES = ['HP','ATK','DEF','AGI','INT','LUK'];
