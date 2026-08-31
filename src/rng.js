@@ -41,11 +41,12 @@ const CLASSES = [
 const GENERAL_SKILLS = ['Mata Elang Pemburu', 'Intuisi Bertarung', 'Regenerasi Cepat', 'Langkah Angin', 'Fokus Absolut', 'Insting Pemburu'];
 
 const SKILL_RARITY = [
-  { name: 'Umum',       weight: 55, color: '#9ca3af' },
-  { name: 'Langka',     weight: 28, color: '#34d399' },
-  { name: 'Epik',       weight: 12, color: '#60a5fa' },
-  { name: 'Legendaris', weight: 4,  color: '#c084fc' },
-  { name: 'Mitos',      weight: 1,  color: '#fbbf24' },
+  { name: 'Umum',          weight: 50, color: '#9ca3af' },
+  { name: 'Langka',        weight: 28, color: '#34d399' },
+  { name: 'Epik',          weight: 13, color: '#60a5fa' },
+  { name: 'Legendaris',    weight: 5,  color: '#c084fc' },
+  { name: 'Mitos',         weight: 3,  color: '#fbbf24' },
+  { name: 'Transenden',    weight: 1,  color: '#ffffff' },
 ];
 
 const EPITHETS_HIGH = ['Yang Ditakuti Gerbang', 'Sang Penakluk Dungeon', 'Bayangan Kehancuran', 'Penguasa Tanpa Mahkota', 'Legenda yang Terbangun', 'Sang Pemutus Takdir'];

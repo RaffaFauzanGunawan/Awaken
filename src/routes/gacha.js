@@ -114,11 +114,14 @@ router.post('/skill/discard', requireAuth, async (req, res) => {
 
 /* ============ COSMETIC GACHA ============ */
 const COSMETIC_POOL = [
-  { id: 'hat_warrior', name: 'Topi Petarung', rarity: 'Langka', weight: 30 },
-  { id: 'hat_wizard', name: 'Topi Penyihir', rarity: 'Epik', weight: 20 },
+  { id: 'hat_warrior', name: 'Topi Petarung', rarity: 'Langka', weight: 28 },
+  { id: 'hat_wizard', name: 'Topi Penyihir', rarity: 'Epik', weight: 18 },
   { id: 'hat_helm', name: 'Helm Zirah', rarity: 'Legendaris', weight: 10 },
-  { id: 'weapon_sword', name: 'Pedang Terpasang', rarity: 'Langka', weight: 25 },
-  { id: 'weapon_staff', name: 'Tongkat Sihir', rarity: 'Epik', weight: 15 },
+  { id: 'hat_crown', name: 'Mahkota Dewa', rarity: 'Mitos', weight: 4 },
+  { id: 'hat_halo', name: 'Halo Ilahi', rarity: 'Transenden', weight: 1.5 },
+  { id: 'weapon_sword', name: 'Pedang Terpasang', rarity: 'Langka', weight: 22 },
+  { id: 'weapon_staff', name: 'Tongkat Sihir', rarity: 'Epik', weight: 12 },
+  { id: 'weapon_scythe', name: 'Sabit Kematian', rarity: 'Legendaris', weight: 5 },
 ];
 
 function rollCosmetic() {

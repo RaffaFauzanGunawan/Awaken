@@ -191,7 +191,7 @@ router.delete('/mine', requireAuth, async (req, res) => {
 });
 
 /* ============ COSMETICS ============ */
-const VALID_COSMETICS = ['hat_warrior', 'hat_wizard', 'hat_helm', 'weapon_sword', 'weapon_staff'];
+const VALID_COSMETICS = ['hat_warrior', 'hat_wizard', 'hat_helm', 'hat_crown', 'hat_halo', 'weapon_sword', 'weapon_staff', 'weapon_scythe'];
 
 router.get('/cosmetics', requireAuth, async (req, res) => {
   try {

@@ -3,7 +3,7 @@
 
 const API = '/api';
 const STAT_NAMES = ['HP', 'ATK', 'DEF', 'AGI', 'INT', 'LUK'];
-const RARITY_COLOR = { Umum: '#9ca3af', Langka: '#34d399', Epik: '#60a5fa', Legendaris: '#c084fc', Mitos: '#fbbf24' };
+const RARITY_COLOR = { Umum: '#9ca3af', Langka: '#34d399', Epik: '#60a5fa', Legendaris: '#c084fc', Mitos: '#fbbf24', Transenden: '#ffffff' };
 const SLOT_LABELS = { weapon: 'Senjata', armor: 'Zirah', accessory: 'Aksesori' };
 const SLOT_ICONS = { weapon: '⚔️', armor: '🛡️', accessory: '💍' };
 let TOKEN = localStorage.getItem('ga_token') || null;
@@ -15,6 +15,24 @@ let shownLogCount = 0;
 let battleInventoryCache = null;
 let selectedGender = 'male';
 let pendingCosmetics = [];
+
+/* ============ BATTLE ANIMATION STATE ============ */
+let battleAnim = {
+  hunterX: 0, hunterY: 0,
+  monsterX: 0, monsterY: 0,
+  hunterBaseX: 120, monsterBaseX: 0,
+  hunterBaseY: 0, monsterBaseY: 0,
+  damageNumbers: [],
+  hunterFlash: 0,
+  monsterShake: 0,
+  monsterFlash: 0,
+  hunterAttackT: 0,
+  attackActive: false,
+  particles: [],
+  flashOverlay: 0,
+  flashColor: '#ffffff',
+};
+let battleAnimFrame = null;
 
 /* ============ PIXEL ART SPRITE DATA ============ */
 // 16x16 sprites. Each row = 16 hex chars. Space = transparent.
@@ -165,14 +183,71 @@ const COSMETIC_OVERLAYS = {
     '                ',
     '                ',
   ],
+  hat_crown: [
+    '                ',
+    '                ',
+    '   f f ff f f   ',
+    '   fffffffffff  ',
+    '   fffdeedff f  ',
+    '   fffffffffff  ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+  ],
+  hat_halo: [
+    '                ',
+    '                ',
+    '     bbbbb      ',
+    '    b     b     ',
+    '    b     b     ',
+    '     bbbbb      ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+  ],
+  weapon_scythe: [
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '                ',
+    '           ccc  ',
+    '          cc    ',
+    '          cc    ',
+    '          cc    ',
+    '          cc    ',
+    '          cc    ',
+    '          cc    ',
+    '          cc    ',
+    '          cc    ',
+    '                ',
+  ],
 };
 
 const COSMETIC_DEFS = [
   { id: 'hat_warrior', name: 'Topi Petarung', icon: '🎩', rarity: 'Langka', desc: 'Topi kulit untuk petarung jalanan.' },
   { id: 'hat_wizard', name: 'Topi Penyihir', icon: '🧙', rarity: 'Epik', desc: 'Topi tinggi penyihir agung.' },
   { id: 'hat_helm', name: 'Helm Zirah', icon: '⛑️', rarity: 'Legendaris', desc: 'Helm pelindung dari baja sejati.' },
+  { id: 'hat_crown', name: 'Mahkota Dewa', icon: '👑', rarity: 'Mitos', desc: 'Mahkota emas bersinar.' },
+  { id: 'hat_halo', name: 'Halo Ilahi', icon: '😇', rarity: 'Transenden', desc: 'Halo putih keabadian.' },
   { id: 'weapon_sword', name: 'Pedang Terpasang', icon: '🗡️', rarity: 'Langka', desc: 'Pedang ditampilkan di tangan.' },
   { id: 'weapon_staff', name: 'Tongkat Sihir', icon: '🪄', rarity: 'Epik', desc: 'Tongkat bersinar di tangan.' },
+  { id: 'weapon_scythe', name: 'Sabit Kematian', icon: '⚔️', rarity: 'Legendaris', desc: 'Sabit menebas jiwa.' },
 ];
 
 /* ============ MONSTER SPRITE DATA ============ */
@@ -282,6 +357,7 @@ function renderHunterSprite(canvas, gender, cosmetics) {
   // Render cosmetic overlays
   if (cosmetics && cosmetics.length > 0) {
     const ctx = canvas.getContext('2d');
+    const cosPalette = gender === 'female' ? SPRITE_PALETTE_FEMALE : SPRITE_PALETTE;
     cosmetics.forEach((cosId) => {
       const overlay = COSMETIC_OVERLAYS[cosId];
       if (!overlay) return;
@@ -290,7 +366,7 @@ function renderHunterSprite(canvas, gender, cosmetics) {
         for (let x = 0; x < 16; x++) {
           const ch = row[x] || ' ';
           if (ch === ' ') continue;
-          const color = SPRITE_PALETTE[ch] || '#cccccc';
+          const color = cosPalette[ch] || SPRITE_PALETTE[ch] || '#cccccc';
           ctx.fillStyle = color;
           ctx.fillRect(x, y, 1, 1);
         }
@@ -742,6 +818,20 @@ function renderWaveClearNotice(wc) {
   host.scrollTop = host.scrollHeight;
 }
 
+function startBattleLoop() {
+  if (battleAnimFrame) cancelAnimationFrame(battleAnimFrame);
+  const loop = () => {
+    if (activeBattle && !activeBattle.over) {
+      renderBattleCanvas(activeBattle);
+      battleAnimFrame = requestAnimationFrame(loop);
+    }
+  };
+  battleAnimFrame = requestAnimationFrame(loop);
+}
+function stopBattleLoop() {
+  if (battleAnimFrame) { cancelAnimationFrame(battleAnimFrame); battleAnimFrame = null; }
+}
+
 function enterBattleArena(state, isFresh) {
   activeBattle = state;
   resetBattleLogDisplay();
@@ -754,6 +844,8 @@ function enterBattleArena(state, isFresh) {
   hideSubmenus();
   document.getElementById('battle-result').classList.add('show');
   renderBattleArena(state);
+  renderBattleCanvas(state);
+  startBattleLoop();
 
   if (state.over) {
     setBattleActionsEnabled(false);
@@ -848,12 +940,64 @@ async function loadInventoryForBattleMenu() {
   }
 }
 
+function triggerAttackAnimation(type) {
+  battleAnim.attackActive = true;
+  battleAnim.hunterAttackT = 0;
+  if (type === 'flee') return;
+  battleAnim.monsterFlash = 12;
+  // Add damage numbers
+  const dmg = Math.floor(Math.random() * 30) + 10;
+  battleAnim.damageNumbers.push({
+    text: '-' + dmg, x: battleAnim.monsterX + 30, y: battleAnim.monsterY - 10,
+    vy: -1.5, life: 40, color: '#ff4444', size: 14,
+  });
+}
+
+function triggerHealAnimation() {
+  battleAnim.damageNumbers.push({
+    text: '+' + Math.floor(Math.random() * 20 + 5),
+    x: battleAnim.hunterX + 30, y: battleAnim.hunterY - 10,
+    vy: -1.5, life: 40, color: '#44ff88', size: 14,
+  });
+  battleAnim.hunterFlash = 10;
+}
+
+function triggerSkillAnimation() {
+  battleAnim.monsterFlash = 18;
+  battleAnim.flashOverlay = 8;
+  battleAnim.flashColor = 'rgba(167,139,250,0.3)';
+  for (let i = 0; i < 12; i++) {
+    battleAnim.particles.push({
+      x: battleAnim.monsterX + 36,
+      y: battleAnim.monsterY + 36,
+      vx: (Math.random() - 0.5) * 4,
+      vy: -Math.random() * 3 - 1,
+      life: 25 + Math.random() * 15,
+      color: Math.random() > 0.5 ? '#a78bfa' : '#5eead4',
+      size: 2 + Math.random() * 3,
+    });
+  }
+  const dmg = Math.floor(Math.random() * 50) + 20;
+  battleAnim.damageNumbers.push({
+    text: '-' + dmg, x: battleAnim.monsterX + 20, y: battleAnim.monsterY - 15,
+    vy: -2, life: 50, color: '#a78bfa', size: 16,
+  });
+}
+
 async function sendBattleAction(action, extra) {
   if (battleBusy || !activeBattle || activeBattle.over) return;
   battleBusy = true;
   setBattleActionsEnabled(false);
   hideSubmenus();
   try {
+    // Trigger attack animation BEFORE API call
+    if (action === 'attack') triggerAttackAnimation('attack');
+    else if (action === 'skill') triggerSkillAnimation();
+    else if (action === 'item') triggerHealAnimation();
+
+    // Wait for attack animation to play
+    if (action !== 'flee') await sleep(400);
+
     const newState = await api('/gate/action', { method: 'POST', auth: true, body: Object.assign({ action }, extra || {}) });
     activeBattle = newState;
     renderBattleArena(newState);
@@ -910,9 +1054,6 @@ function renderBattleArena(state) {
   monsterFill.classList.toggle('low', monsterPct <= 25);
 
   renderStatusChips(state.statuses.hunter.concat(state.statuses.monster || []));
-
-  // Canvas rendering
-  renderBattleCanvas(state);
 }
 
 function renderBattleCanvas(state) {
@@ -921,126 +1062,213 @@ function renderBattleCanvas(state) {
   const W = 800, H = 280;
   canvas.width = W;
   canvas.height = H;
-
-  // Background
   const isDark = getTheme() !== 'light';
-  // Sky
+
+  // Init base positions
+  const spriteSize = 80;
+  const isBoss = state.monster.isBoss;
+  const monsterSpriteSize = isBoss ? 96 : 72;
+  battleAnim.hunterBaseX = 100;
+  battleAnim.hunterBaseY = H * 0.35 - 5;
+  battleAnim.monsterBaseX = W - 110 - monsterSpriteSize;
+  battleAnim.monsterBaseY = H * 0.35 - (isBoss ? 10 : 0);
+
+  // Update animation
+  if (battleAnim.attackActive) {
+    battleAnim.hunterAttackT += 0.08;
+    if (battleAnim.hunterAttackT >= 1) {
+      battleAnim.attackActive = false;
+      battleAnim.hunterAttackT = 0;
+    }
+  }
+  if (battleAnim.monsterFlash > 0) battleAnim.monsterFlash--;
+  if (battleAnim.hunterFlash > 0) battleAnim.hunterFlash--;
+  if (battleAnim.monsterShake > 0) battleAnim.monsterShake--;
+  if (battleAnim.flashOverlay > 0) battleAnim.flashOverlay--;
+  battleAnim.damageNumbers = battleAnim.damageNumbers.filter((d) => { d.y += d.vy; d.life--; return d.life > 0; });
+  battleAnim.particles = battleAnim.particles.filter((p) => { p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life--; return p.life > 0; });
+
+  // Compute animated positions
+  let hx = battleAnim.hunterBaseX, hy = battleAnim.hunterBaseY;
+  let mx = battleAnim.monsterBaseX, my = battleAnim.monsterBaseY;
+  if (battleAnim.attackActive) {
+    const t = battleAnim.hunterAttackT;
+    const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const progress = t < 0.5 ? ease * 2 : 2 - ease * 2;
+    hx += (W * 0.28 - battleAnim.hunterBaseX) * Math.min(1, progress);
+  }
+  if (battleAnim.monsterShake > 0) {
+    mx += (Math.random() - 0.5) * 6;
+    my += (Math.random() - 0.5) * 4;
+  }
+  battleAnim.hunterX = hx; battleAnim.hunterY = hy;
+  battleAnim.monsterX = mx; battleAnim.monsterY = my;
+
+  // --- DRAW BACKGROUND ---
   const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.6);
-  skyGrad.addColorStop(0, isDark ? '#0a0e1a' : '#b8c0d8');
-  skyGrad.addColorStop(1, isDark ? '#0f1428' : '#c8cce0');
+  skyGrad.addColorStop(0, isDark ? '#080c18' : '#b0b8d0');
+  skyGrad.addColorStop(1, isDark ? '#0c1020' : '#c0c8e0');
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, W, H * 0.6);
 
-  // Stars (dark theme only)
+  // Stars
   if (isDark) {
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    for (let i = 0; i < 30; i++) {
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    for (let i = 0; i < 40; i++) {
       const sx = (i * 137 + 50) % W;
-      const sy = (i * 89 + 20) % (H * 0.5);
+      const sy = (i * 89 + 20) % (H * 0.55);
+      const twinkle = Math.sin(Date.now() * 0.002 + i) * 0.3 + 0.7;
+      ctx.globalAlpha = twinkle * 0.6;
       ctx.fillRect(sx, sy, 1, 1);
     }
+    ctx.globalAlpha = 1;
   }
 
   // Ground
   const groundGrad = ctx.createLinearGradient(0, H * 0.58, 0, H);
-  groundGrad.addColorStop(0, isDark ? '#1a2018' : '#9aaa8a');
-  groundGrad.addColorStop(1, isDark ? '#0f1410' : '#7a8a6a');
+  groundGrad.addColorStop(0, isDark ? '#162012' : '#8aa070');
+  groundGrad.addColorStop(1, isDark ? '#0c1008' : '#6a7a50');
   ctx.fillStyle = groundGrad;
   ctx.fillRect(0, H * 0.58, W, H * 0.42);
-
-  // Ground line
-  ctx.strokeStyle = isDark ? 'rgba(94,234,212,0.15)' : 'rgba(13,148,136,0.2)';
+  ctx.strokeStyle = isDark ? 'rgba(94,234,212,0.12)' : 'rgba(13,148,136,0.15)';
   ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, H * 0.6);
-  ctx.lineTo(W, H * 0.6);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, H * 0.6); ctx.lineTo(W, H * 0.6); ctx.stroke();
 
-  // Ground details (small rocks/grass)
-  ctx.fillStyle = isDark ? 'rgba(94,234,212,0.08)' : 'rgba(13,148,136,0.12)';
-  for (let i = 0; i < 8; i++) {
-    const rx = (i * 107 + 30) % W;
-    const ry = H * 0.62 + (i * 13 % 30);
-    ctx.fillRect(rx, ry, 4 + (i % 3), 2);
+  // Ground details
+  ctx.fillStyle = isDark ? 'rgba(94,234,212,0.06)' : 'rgba(13,148,136,0.1)';
+  for (let i = 0; i < 12; i++) {
+    const rx = (i * 73 + 20) % W;
+    const ry = H * 0.62 + (i * 17 % 25);
+    ctx.fillRect(rx, ry, 3 + (i % 3), 2);
   }
 
-  // Render hunter sprite (left side)
+  // --- DRAW HUNTER ---
   const gender = localStorage.getItem('ga_gender') || 'male';
   const cosmetics = (currentHunter && currentHunter.cosmetics) || [];
-  const spriteSize = 80;
-  const hunterX = 120;
-  const hunterY = H * 0.35;
+  const equippedCos = (currentHunter && currentHunter.equippedCosmetics) || [];
 
-  // Hunter shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.beginPath();
-  ctx.ellipse(hunterX + spriteSize / 2, hunterY + spriteSize + 5, spriteSize * 0.35, 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(hx + spriteSize / 2, hy + spriteSize + 4, spriteSize * 0.3, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Hunter sprite on temp canvas then draw scaled
+  // Sprite
   const hunterCanvas = document.createElement('canvas');
-  hunterCanvas.width = 16;
-  hunterCanvas.height = 16;
-  renderHunterSprite(hunterCanvas, gender, cosmetics);
+  hunterCanvas.width = 16; hunterCanvas.height = 16;
+  renderHunterSprite(hunterCanvas, gender, equippedCos);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(hunterCanvas, hunterX, hunterY, spriteSize, spriteSize);
+  ctx.drawImage(hunterCanvas, hx, hy, spriteSize, spriteSize);
 
-  // Hunter glow
-  ctx.shadowColor = isDark ? 'rgba(94,234,212,0.4)' : 'rgba(13,148,136,0.3)';
-  ctx.shadowBlur = 12;
-  ctx.strokeStyle = isDark ? 'rgba(94,234,212,0.3)' : 'rgba(13,148,136,0.25)';
+  // Glow
+  ctx.shadowColor = isDark ? 'rgba(94,234,212,0.5)' : 'rgba(13,148,136,0.4)';
+  ctx.shadowBlur = 14;
+  ctx.strokeStyle = isDark ? 'rgba(94,234,212,0.25)' : 'rgba(13,148,136,0.2)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(hunterX + 8, hunterY + 8, spriteSize - 16, spriteSize - 16);
+  ctx.strokeRect(hx + 6, hy + 6, spriteSize - 12, spriteSize - 12);
   ctx.shadowBlur = 0;
 
-  // Render monster sprite (right side)
-  const isBoss = state.monster.isBoss;
-  const monsterSpriteSize = isBoss ? 96 : 72;
-  const monsterX = W - 120 - monsterSpriteSize;
-  const monsterY = H * 0.35 - (isBoss ? 8 : 0);
+  // Flash overlay when hunter gets hit
+  if (battleAnim.hunterFlash > 0) {
+    ctx.fillStyle = 'rgba(251,113,133,' + (battleAnim.hunterFlash / 12 * 0.4) + ')';
+    ctx.fillRect(hx, hy, spriteSize, spriteSize);
+  }
 
-  // Monster shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  // --- DRAW MONSTER ---
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
   ctx.beginPath();
-  ctx.ellipse(monsterX + monsterSpriteSize / 2, monsterY + monsterSpriteSize + 5, monsterSpriteSize * 0.35, 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(mx + monsterSpriteSize / 2, my + monsterSpriteSize + 4, monsterSpriteSize * 0.3, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Monster sprite
+  // Sprite
   const monsterCanvas = document.createElement('canvas');
-  monsterCanvas.width = 16;
-  monsterCanvas.height = 16;
+  monsterCanvas.width = 16; monsterCanvas.height = 16;
   renderMonsterSprite(monsterCanvas, isBoss);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(monsterCanvas, monsterX, monsterY, monsterSpriteSize, monsterSpriteSize);
+  ctx.drawImage(monsterCanvas, mx, my, monsterSpriteSize, monsterSpriteSize);
 
-  // Monster glow
-  ctx.shadowColor = isBoss ? 'rgba(251,113,133,0.5)' : 'rgba(251,113,133,0.3)';
-  ctx.shadowBlur = isBoss ? 16 : 8;
-  ctx.strokeStyle = isBoss ? 'rgba(251,113,133,0.4)' : 'rgba(251,113,133,0.25)';
+  // Glow
+  ctx.shadowColor = isBoss ? 'rgba(251,113,133,0.6)' : 'rgba(251,113,133,0.35)';
+  ctx.shadowBlur = isBoss ? 18 : 10;
+  ctx.strokeStyle = isBoss ? 'rgba(251,113,133,0.35)' : 'rgba(251,113,133,0.2)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(monsterX + 8, monsterY + 8, monsterSpriteSize - 16, monsterSpriteSize - 16);
+  ctx.strokeRect(mx + 6, my + 6, monsterSpriteSize - 12, monsterSpriteSize - 12);
   ctx.shadowBlur = 0;
 
-  // Gate rank indicator (center)
-  ctx.fillStyle = isDark ? 'rgba(167,139,250,0.15)' : 'rgba(124,58,237,0.1)';
-  ctx.beginPath();
-  ctx.arc(W / 2, H * 0.5, 30, 0, Math.PI * 2);
-  ctx.fill();
+  // Flash overlay when monster gets hit
+  if (battleAnim.monsterFlash > 0) {
+    const flashAlpha = battleAnim.monsterFlash / 18 * 0.5;
+    ctx.fillStyle = 'rgba(255,255,255,' + flashAlpha + ')';
+    ctx.fillRect(mx, my, monsterSpriteSize, monsterSpriteSize);
+  }
 
-  // "VS" text
-  ctx.font = 'bold 16px Cinzel, serif';
+  // --- DRAW ATTACK LINE (when attacking) ---
+  if (battleAnim.attackActive && battleAnim.hunterAttackT > 0.3 && battleAnim.hunterAttackT < 0.7) {
+    const lineAlpha = Math.sin((battleAnim.hunterAttackT - 0.3) / 0.4 * Math.PI);
+    ctx.strokeStyle = 'rgba(94,234,212,' + (lineAlpha * 0.6) + ')';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(hx + spriteSize, hy + spriteSize * 0.5);
+    ctx.lineTo(mx, my + monsterSpriteSize * 0.5);
+    ctx.stroke();
+    // Slash particles
+    for (let i = 0; i < 3; i++) {
+      const px = hx + spriteSize + (mx - hx - spriteSize) * Math.random();
+      const py = hy + spriteSize * 0.3 + Math.random() * spriteSize * 0.4;
+      ctx.fillStyle = 'rgba(94,234,212,' + (lineAlpha * 0.8) + ')';
+      ctx.fillRect(px, py, 2, 2);
+    }
+  }
+
+  // --- DRAW PARTICLES ---
+  battleAnim.particles.forEach((p) => {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = Math.min(1, p.life / 10);
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+  });
+  ctx.globalAlpha = 1;
+
+  // --- DRAW DAMAGE NUMBERS ---
+  battleAnim.damageNumbers.forEach((d) => {
+    const alpha = Math.min(1, d.life / 15);
+    ctx.font = 'bold ' + d.size + 'px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(0,0,0,' + (alpha * 0.5) + ')';
+    ctx.fillText(d.text, d.x + 1, d.y + 1);
+    ctx.fillStyle = d.color.replace(')', ',' + alpha + ')').replace('rgb', 'rgba');
+    if (!d.color.includes('rgba')) ctx.globalAlpha = alpha;
+    ctx.fillStyle = d.color;
+    ctx.fillText(d.text, d.x, d.y);
+    ctx.globalAlpha = 1;
+  });
+
+  // --- FLASH OVERLAY ---
+  if (battleAnim.flashOverlay > 0) {
+    ctx.fillStyle = battleAnim.flashColor;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // --- VS INDICATOR ---
+  ctx.fillStyle = isDark ? 'rgba(167,139,250,0.12)' : 'rgba(124,58,237,0.08)';
+  ctx.beginPath();
+  ctx.arc(W / 2, H * 0.5, 24, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.font = 'bold 14px Cinzel, serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = isDark ? 'rgba(167,139,250,0.6)' : 'rgba(124,58,237,0.5)';
+  ctx.fillStyle = isDark ? 'rgba(167,139,250,0.5)' : 'rgba(124,58,237,0.4)';
   ctx.fillText('VS', W / 2, H * 0.5);
-
-  // Gate rank text
-  ctx.font = '10px "JetBrains Mono", monospace';
-  ctx.fillStyle = isDark ? 'rgba(94,234,212,0.5)' : 'rgba(13,148,136,0.5)';
-  ctx.fillText(`Gerbang ${state.gateRank} · Wave ${state.wave}/${state.maxWave}`, W / 2, H * 0.5 + 22);
+  ctx.font = '9px "JetBrains Mono", monospace';
+  ctx.fillStyle = isDark ? 'rgba(94,234,212,0.4)' : 'rgba(13,148,136,0.4)';
+  ctx.fillText(`Gerbang ${state.gateRank} · Wave ${state.wave}/${state.maxWave}`, W / 2, H * 0.5 + 18);
 }
 
 function showBattleOutcome(state) {
+  stopBattleLoop();
+  renderBattleArena(state);
+  renderBattleCanvas(state);
   document.getElementById('battle-actions').classList.add('hidden');
   hideSubmenus();
 
@@ -1086,6 +1314,7 @@ function showBattleOutcome(state) {
 }
 
 document.getElementById('btn-battle-continue').addEventListener('click', () => {
+  stopBattleLoop();
   activeBattle = null;
   document.getElementById('battle-result').classList.remove('show');
   document.getElementById('battle-actions').classList.remove('hidden');

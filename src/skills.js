@@ -79,6 +79,7 @@ const RARITY_MULT = {
   Epik: 1.45,
   Legendaris: 1.75,
   Mitos: 2.15,
+  Transenden: 2.65,
 };
 
 const KIND_LABEL = {

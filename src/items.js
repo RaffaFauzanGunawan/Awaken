@@ -3,9 +3,9 @@
 // RANKS/CLASSES di rng.js), hanya kepemilikannya yang disimpan di database
 // (tabel hunter_inventory, lihat schema.sql).
 
-const RARITY_ORDER = ['Umum', 'Langka', 'Epik', 'Legendaris', 'Mitos'];
+const RARITY_ORDER = ['Umum', 'Langka', 'Epik', 'Legendaris', 'Mitos', 'Transenden'];
 const RARITY_COLOR = {
-  Umum: '#9ca3af', Langka: '#34d399', Epik: '#60a5fa', Legendaris: '#c084fc', Mitos: '#fbbf24',
+  Umum: '#9ca3af', Langka: '#34d399', Epik: '#60a5fa', Legendaris: '#c084fc', Mitos: '#fbbf24', Transenden: '#ffffff',
 };
 
 const ITEM_LIBRARY = {
@@ -22,12 +22,14 @@ const ITEM_LIBRARY = {
   weapon_dragon: { name: 'Pedang Naga',        icon: '🐉', type: 'equipment', slot: 'weapon', rarity: 'Epik',       stat: 'ATK', amount: 32 },
   weapon_legend: { name: 'Pedang Legenda',     icon: '✨', type: 'equipment', slot: 'weapon', rarity: 'Legendaris', stat: 'ATK', amount: 55 },
   weapon_mythic: { name: 'Pedang Dewa Naga',   icon: '🌌', type: 'equipment', slot: 'weapon', rarity: 'Mitos',      stat: 'ATK', amount: 85 },
+  weapon_transcend:{ name: 'Pedang Kosmik',     icon: '💫', type: 'equipment', slot: 'weapon', rarity: 'Transenden', stat: 'ATK', amount: 120 },
 
   // ---- Zirah (DEF) ----
   armor_leather: { name: 'Zirah Kulit',       icon: '🥋', type: 'equipment', slot: 'armor', rarity: 'Umum',       stat: 'DEF', amount: 8  },
   armor_steel:   { name: 'Zirah Baja',         icon: '🛡️', type: 'equipment', slot: 'armor', rarity: 'Langka',     stat: 'DEF', amount: 18 },
   armor_dragon:  { name: 'Zirah Naga',         icon: '🩸', type: 'equipment', slot: 'armor', rarity: 'Epik',       stat: 'DEF', amount: 32 },
   armor_divine:  { name: 'Zirah Dewa',         icon: '👑', type: 'equipment', slot: 'armor', rarity: 'Legendaris', stat: 'DEF', amount: 55 },
+  armor_transcend:{ name: 'Zirah Kosmik',       icon: '🌟', type: 'equipment', slot: 'armor', rarity: 'Transenden', stat: 'DEF', amount: 120 },
 
   // ---- Aksesori (AGI / INT / LUK) ----
   acc_windcloak: { name: 'Jubah Angin',       icon: '🧣', type: 'equipment', slot: 'accessory', rarity: 'Langka', stat: 'AGI', amount: 10 },
@@ -36,6 +38,8 @@ const ITEM_LIBRARY = {
   acc_shadowwing:{ name: 'Sayap Bayangan',     icon: '🦋', type: 'equipment', slot: 'accessory', rarity: 'Epik',   stat: 'AGI', amount: 22 },
   acc_arcanecrown:{ name: 'Mahkota Arcane',    icon: '🌙', type: 'equipment', slot: 'accessory', rarity: 'Epik',   stat: 'INT', amount: 22 },
   acc_goldenhour:{ name: 'Jam Pasir Emas',     icon: '⏳', type: 'equipment', slot: 'accessory', rarity: 'Epik',   stat: 'LUK', amount: 22 },
+  acc_cosmiceye: { name: 'Mata Kosmik',        icon: '👁️', type: 'equipment', slot: 'accessory', rarity: 'Transenden', stat: 'INT', amount: 50 },
+  acc_voidring:  { name: 'Cincin Kehampaan',   icon: '🪐', type: 'equipment', slot: 'accessory', rarity: 'Transenden', stat: 'LUK', amount: 50 },
 };
 
 const SLOTS = ['weapon', 'armor', 'accessory'];
@@ -54,6 +58,7 @@ function rollItemDrop(rankIndex) {
     13 + idx * 2.2,               // Epik
     4 + idx * 2.2,                // Legendaris
     1 + idx * 1.1,                // Mitos
+    idx >= 5 ? 0.5 + idx * 0.3 : 0,  // Transenden (hanya rank S ke atas)
   ];
   const total = weights.reduce((a, b) => a + b, 0);
   let r = Math.random() * total;
@@ -93,7 +98,7 @@ function addStats(base, bonus) {
 }
 
 // Harga jual di Toko, berdasarkan rarity item.
-const PRICE_BY_RARITY = { Umum: 40, Langka: 120, Epik: 320, Legendaris: 800, Mitos: 2000 };
+const PRICE_BY_RARITY = { Umum: 40, Langka: 120, Epik: 320, Legendaris: 800, Mitos: 2000, Transenden: 5000 };
 function getItemPrice(key) {
   const item = ITEM_LIBRARY[key];
   return item ? (PRICE_BY_RARITY[item.rarity] || 100) : 100;

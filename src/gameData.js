@@ -19,6 +19,7 @@ const RARITY_POWER = {
   Epik: 1.2,
   Legendaris: 1.35,
   Mitos: 1.5,
+  Transenden: 1.8,
 };
 
 const SKILL_DEFS = {
