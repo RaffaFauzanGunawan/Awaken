@@ -940,8 +940,8 @@ const appHeader = $('app-header');
 const navLoggedIn = $('nav-loggedin');
 const navUsername = $('nav-username');
 
-function showMainMenu() { mainMenu?.classList.remove('hidden'); authScreen?.classList.add('hidden'); creationScreen?.classList.add('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.add('hidden'); }
-function showAuth() { mainMenu?.classList.add('hidden'); authScreen?.classList.remove('hidden'); creationScreen?.classList.add('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.remove('hidden'); }
+function showMainMenu() { mainMenu?.classList.remove('hidden'); authScreen?.classList.add('hidden'); creationScreen?.classList.add('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.add('hidden'); document.body.classList.add('menu-open'); }
+function showAuth() { mainMenu?.classList.add('hidden'); authScreen?.classList.remove('hidden'); creationScreen?.classList.add('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.remove('hidden'); document.body.classList.remove('menu-open'); }
 function showCreation() { mainMenu?.classList.add('hidden'); authScreen?.classList.add('hidden'); creationScreen?.classList.remove('hidden'); appEl?.classList.add('hidden'); appHeader?.classList.remove('hidden'); renderCreationPreview(); }
 
 // Start Game
